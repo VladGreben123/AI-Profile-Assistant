@@ -1,0 +1,42 @@
+services:
+  backend:
+    build: ./backend
+    container_name: fastapi-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    working_dir: /app
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./test.db
+      - MISTRAL_API_KEY=hdEth5IdV4xffjQv4gMjRBi6HN0resY6
+      - MISTRAL_MODEL=mistral-small-latest
+    restart: unless-stopped
+    networks:
+      - app-network
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+  frontend:
+    build: ./frontend
+    container_name: react-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    working_dir: /app
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - app-network
+    stdin_open: true
+    tty: true
+
+networks:
+  app-network:
+    driver: bridge
